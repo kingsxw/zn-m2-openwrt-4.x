@@ -104,11 +104,12 @@ jobs:
       uses: actions/checkout@main
 
     - name: Clone Source Code(克隆源码)
-      working-directory: /workdir
+      # working-directory: $GITHUB_WORKSPACE
       run: |
         df -hT $PWD
+        df -hT $GITHUB_WORKSPACE
         git clone $REPO_URL -b $REPO_BRANCH openwrt
-        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        # ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: Load custom feeds
       run: |
