@@ -89,7 +89,6 @@ jobs:
         sudo -E apt-get autoremove -y --purge
         sudo -E apt-get clean
         sudo rm -rf po2lmo
-        sudo timedatectl set-timezone "$TZ"
         git config --global user.email ${{ github.actor }}@users.noreply.github.com
         git config --global user.name ${{ github.actor }}
         git config --global init.defaultBranch master
