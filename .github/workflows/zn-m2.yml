@@ -197,14 +197,14 @@ jobs:
       run: |
         echo "release_tag=ZN-M2-$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch release.txt
-        echo "ZN-M2 OpenWrt Firmware Release" > release.txt
+        echo "ZN-M2 OpenWrt Firmware Release" >> release.txt
         echo "Release Time: $(date +"%Y-%m-%d %H:%M:%S")" >> release.txt
         echo "Release Version: $(cat ${{ env.FIRMWARE }}/.version)" >> release.txt
         echo "Release Hash: $(cat ${{ env.FIRMWARE }}/.hash)" >> release.txt
-        echo "Release Files:" >> release.txt> release.txt
-        ls -l ${{ env.FIRMWARE }}/*.ubi >> release.txt
-        ls -l ${{ env.FIRMWARE }}/*.bin >> release.txt
-        ls -l ${{ env.FIRMWARE }}/*.manifest >> release.txt
+        echo "Release Files:" >> release.txt
+        ls -1 ${{ env.FIRMWARE }}/*.ubi >> release.txt
+        ls -1 ${{ env.FIRMWARE }}/*.bin >> release.txt
+        ls -1 ${{ env.FIRMWARE }}/*.manifest >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
