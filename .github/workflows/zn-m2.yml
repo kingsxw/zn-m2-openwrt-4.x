@@ -197,16 +197,18 @@ jobs:
       run: |
         echo "release_tag=ZN-M2-$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch release.txt
-        echo "ZN-M2 OpenWrt Firmware Release" >> release.txt
-        echo "Release Time: $(date +"%Y-%m-%d %H:%M:%S")" >> release.txt
-        echo "Release Version: $(cat ${{ env.FIRMWARE }}/version.buildinfo)" >> release.txt
-        echo "Release Files:" >> release.txt
-        echo "config.buildinfo" >> release.txt
-        ls -1 ${{ env.FIRMWARE }}/*.manifest | rev | cut -d"/" -f1- | rev >> release.txt
-        ls -1 ${{ env.FIRMWARE }}/*.ubi | rev | cut -d"/" -f1- | rev >> release.txt
-        ls -1 ${{ env.FIRMWARE }}/*.bin | rev | cut -d"/" -f1- | rev >> release.txt
-        echo "Release Sha256sums:" >> release.txt
-        echo "$(egrep "config.buildinfo|openwrt.*.manifest|openwrt.*.ubi|openwrt.*.bin" ${{ env.FIRMWARE }}/sha256sums)" >> release.txt
+        echo "### ZN-M2 OpenWrt Firmware Release" >> release.txt
+        echo "**Release Time:**" >> release.txt
+        echo "> $(date +"%Y-%m-%d %H:%M:%S")" >> release.txt
+        echo "**Release Version:**" >> release.txt
+        echo "> $(cat ${{ env.FIRMWARE }}/version.buildinfo)" >> release.txt
+        echo "**Release Files:**" >> release.txt
+        echo "> config.buildinfo" >> release.txt
+        echo "> $(ls -1 ${{ env.FIRMWARE }}/*.manifest | rev | cut -d"/" -f1 | rev)" >> release.txt
+        echo "> $(ls -1 ${{ env.FIRMWARE }}/*.ubi | rev | cut -d"/" -f1 | rev)" >> release.txt
+        echo "> $(ls -1 ${{ env.FIRMWARE }}/*.bin | rev | cut -d"/" -f1 | rev)" >> release.txt
+        echo "**Release Sha256sums:**" >> release.txt
+        echo "$(egrep "config.buildinfo|openwrt.*.manifest|openwrt.*.ubi|openwrt.*.bin" ${{ env.FIRMWARE }}/sha256sums | sed "s/^/\> /g")" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
