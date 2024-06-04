@@ -199,12 +199,14 @@ jobs:
         touch release.txt
         echo "ZN-M2 OpenWrt Firmware Release" >> release.txt
         echo "Release Time: $(date +"%Y-%m-%d %H:%M:%S")" >> release.txt
-        echo "Release Version: $(cat ${{ env.FIRMWARE }}/.version)" >> release.txt
-        echo "Release Hash: $(cat ${{ env.FIRMWARE }}/.hash)" >> release.txt
+        echo "Release Version: $(cat ${{ env.FIRMWARE }}/version.buildinfo)" >> release.txt
         echo "Release Files:" >> release.txt
-        ls -1 ${{ env.FIRMWARE }}/*.ubi >> release.txt
-        ls -1 ${{ env.FIRMWARE }}/*.bin >> release.txt
-        ls -1 ${{ env.FIRMWARE }}/*.manifest >> release.txt
+        ls -1 ${{ env.FIRMWARE }}/*.ubi | cut -d"/" -f1- >> release.txt
+        ls -1 ${{ env.FIRMWARE }}/*.bin | cut -d"/" -f1-  >> release.txt
+        echo "config.buildinfo" >> release.txt
+        ls -1 ${{ env.FIRMWARE }}/*.manifest | cut -d"/" -f1- >> release.txt
+        echo "Release Sha256sums:" >> release.txt
+        echo "$(egrep "config.buildinfo|openwrt" ${{ env.FIRMWARE }}/sha256sums)"" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
@@ -220,6 +222,7 @@ jobs:
         files: |
          ${{ env.FIRMWARE }}/*.ubi
          ${{ env.FIRMWARE }}/*.bin
+         ${{ env.FIRMWARE }}/config.buildinfo
          ${{ env.FIRMWARE }}/*.manifest
 
     - name: Delete releases and workflows runs
