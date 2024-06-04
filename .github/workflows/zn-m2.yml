@@ -206,7 +206,7 @@ jobs:
         echo "config.buildinfo" >> release.txt
         ls -1 ${{ env.FIRMWARE }}/*.manifest | cut -d"/" -f1- >> release.txt
         echo "Release Sha256sums:" >> release.txt
-        echo "$(egrep "config.buildinfo|openwrt" ${{ env.FIRMWARE }}/sha256sums)"" >> release.txt
+        echo "$(egrep "config.buildinfo|openwrt" ${{ env.FIRMWARE }}/sha256sums)" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
