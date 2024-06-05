@@ -199,17 +199,17 @@ jobs:
         touch release.txt
         echo "## ZN-M2 OpenWrt Firmware Release" >> release.txt
         echo "### Release Time:" >> release.txt
-        echo >> release.txt
-        echo "> $(date +"%Y-%m-%d %H:%M:%S")" >> release.txt
-        echo >> release.txt
+        # echo >> release.txt
+        echo "$(date +"%Y-%m-%d %H:%M:%S")" >> release.txt
+        # echo >> release.txt
         echo "### Release Version:" >> release.txt
-        echo >> release.txt
-        echo "> $(cat ${{ env.FIRMWARE }}/version.buildinfo)" >> release.txt
-        echo >> release.txt
+        # echo >> release.txt
+        echo "$(cat ${{ env.FIRMWARE }}/version.buildinfo)" >> release.txt
+        # echo >> release.txt
         echo "### Release Files:" >> release.txt
-        echo '> |Files|Sha256sums|' >> release.txt
-        echo '> |-|-|' >> release.txt
-        echo "$(egrep "config.buildinfo|openwrt.*.manifest|openwrt.*.ubi|openwrt.*.bin" ${{ env.FIRMWARE }}/sha256sums | awk -F" " '{print $2" "$1}'| sed -E "s/ |\*|$/\|/g" | sed "s/^/\> /g")" >> release.txt
+        echo '|Files|Sha256sums|' >> release.txt
+        echo '|:-|:-|' >> release.txt
+        echo "$(egrep "config.buildinfo|openwrt.*.manifest|openwrt.*.ubi|openwrt.*.bin" ${{ env.FIRMWARE }}/sha256sums | awk -F" " '{print $2" "$1}'| sed -E "s/ |\*|$/\|/g")" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
         # echo >> release.txt
         # echo "> config.buildinfo" >> release.txt
