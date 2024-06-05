@@ -207,7 +207,7 @@ jobs:
         echo "$(cat ${{ env.FIRMWARE }}/version.buildinfo)" >> release.txt
         # echo >> release.txt
         echo "### Release Files:" >> release.txt
-        echo '|Files|Sha256sums|' >> release.txt
+        echo '|File|Sha256sum|' >> release.txt
         echo '|:-|:-|' >> release.txt
         echo "$(egrep "config.buildinfo|openwrt.*.manifest|openwrt.*.ubi|openwrt.*.bin" ${{ env.FIRMWARE }}/sha256sums | awk -F" " '{print $2" "$1}'| sed -E "s/ |\*|$/\|/g")" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
