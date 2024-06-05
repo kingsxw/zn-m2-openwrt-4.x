@@ -1,0 +1,249 @@
+#
+# https://github.com/P3TERX/Actions-OpenWrt
+#
+# File: .github/workflows/openwrt-bulder.yml
+# Description: Build OpenWrt using GitHub Actions
+#
+# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
+name: ZN-M2 OpenWrt Lite Version Builder
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+
+env:
+  REPO_URL: https://github.com/sdf8057/ipq6000.git
+  REPO_BRANCH: master
+  FEEDS_CONF: feeds.conf.default
+  CONFIG_FILE: ./config/zn-m2-lite.config
+  DIY_P1_SH: ./scripts/diy-part1.sh
+  DIY_P2_SH: ./scripts/diy-part2.sh
+  DIY_P3_SH: ./scripts/diy-part3.sh
+  UPLOAD_BIN_DIR: false
+  UPLOAD_FIRMWARE: true
+  UPLOAD_RELEASE: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+
+    - name: Check Server Performance(检查服务器性能)
+      run: |
+        echo "警告⚠"
+        echo "分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
+        echo -e "已知CPU型号（降序）：7763，8370C，8272CL，8171M，E5-2673 \n"
+        echo "--------------------------CPU信息--------------------------"
+        echo "CPU物理数量：$(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)"
+        echo -e "CPU核心信息：$(cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c) \n"
+        echo "--------------------------内存信息--------------------------"
+        echo "已安装内存详细信息："
+        echo -e "$(sudo lshw -short -C memory | grep GiB) \n"
+        echo "--------------------------硬盘信息--------------------------"
+        echo "硬盘数量：$(ls /dev/sd* | grep -v [1-9] | wc -l)" && df -hT
+
+    # - name: Free Disk Space P1(释放空间)
+    #   env:
+    #     DEBIAN_FRONTEND: noninteractive
+    #   run: |
+    #     sudo docker image prune --all --force
+    #     sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL $AGENT_TOOLSDIRECTORY
+    #     sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+
+    - name: Free Disk Space P2(进一步释放空间)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: true
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
+    - name: Apt Update
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get -y update
+        
+    - name: Initialization Environment(初始化环境)
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        # sudo -E apt-get -y update
+        curl -s https://raw.githubusercontent.com/immortalwrt/build-scripts/master/init_build_environment.sh | sudo bash
+        sudo -E apt-get install -y rename pigz libfuse-dev upx subversion clang
+        sudo -E apt-get install -y  build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python2.7 python3 python3-pyelftools python3-setuptools python3-distutils rsync unzip zlib1g-dev file wget     
+        sudo -E apt-get install -y ack antlr3 asciidoc autoconf automake autopoint binutils bzip2 ccache cmake cpio curl device-tree-compiler fastjar libncursesw5-dev libpython3-dev libreadline-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf qemu-utils scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl vim xmlto xxd
+        sudo -E apt-get autoremove -y --purge
+        sudo -E apt-get clean
+        sudo rm -rf po2lmo
+        git config --global user.email ${{ github.actor }}@users.noreply.github.com
+        git config --global user.name ${{ github.actor }}
+        git config --global init.defaultBranch master
+        sudo timedatectl set-timezone "$TZ"
+
+    - name: Combine Disks(合并磁盘)
+      uses: easimon/maximize-build-space@master
+      with:
+        swap-size-mb: 1024
+        temp-reserve-mb: 100
+        root-reserve-mb: 1024
+        
+    - name: Checkout
+      uses: actions/checkout@main
+
+    - name: Clone Source Code(克隆源码)
+      run: |
+        df -hT $GITHUB_WORKSPACE
+        git clone $REPO_URL -b $REPO_BRANCH openwrt
+
+    - name: Load custom feeds
+      run: |
+        set -x
+        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+        chmod +x $DIY_P1_SH
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P1_SH
+
+    - name: Update feeds
+      run: |
+        cd openwrt
+        ./scripts/feeds update -a
+
+    - name: Modify feeds
+      run: |
+        set -x
+        chmod +x $DIY_P2_SH
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P2_SH
+
+    - name: Install feeds
+      run: |
+        cd openwrt
+        ./scripts/feeds install -a
+
+    - name: Load custom configuration
+      run: |
+        set -x
+        [ -e files ] && mv files openwrt/files
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x $DIY_P3_SH
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P3_SH
+
+    - name: Download package
+      id: package
+      run: |
+        cd openwrt
+        make defconfig
+        make download -j$(nproc)
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+
+    - name: Compile the firmware
+      id: compile
+      run: |
+        cd openwrt
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) || make -j1 || make -j1 V=s
+        echo "status=success" >> $GITHUB_OUTPUT
+        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
+        [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
+        echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+
+    - name: Check space usage
+      if: (!cancelled())
+      run: |
+        df -hT
+
+    - name: Upload bin directory
+      uses: actions/upload-artifact@main
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      with:
+        name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        path: openwrt/bin
+
+    - name: Organize files
+      id: organize
+      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      run: |
+        cd openwrt/bin/targets/*/*
+        rm -rf packages
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Upload firmware directory
+      uses: actions/upload-artifact@main
+      if: steps.organize.outputs.status == 'success' && !cancelled()
+      with:
+        name: ipq6000${{ env.FILE_DATE }}
+        path: ${{ env.FIRMWARE }}
+
+    - name: Generate release tag
+      id: tag
+      if: env.UPLOAD_RELEASE == 'true'
+      run: |
+        echo "release_tag=ZN-M2-Lite-$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+        touch release.txt
+        echo "## ZN-M2 OpenWrt Firmware Lite Version Release" >> release.txt
+        echo "### Release Time:" >> release.txt
+        # echo >> release.txt
+        echo "$(date +"%Y-%m-%d %H:%M:%S")" >> release.txt
+        # echo >> release.txt
+        echo "### Release Version:" >> release.txt
+        # echo >> release.txt
+        echo "$(cat ${{ env.FIRMWARE }}/version.buildinfo)" >> release.txt
+        # echo >> release.txt
+        echo "### Release Files:" >> release.txt
+        echo '|Files|Sha256sums|' >> release.txt
+        echo '|:-|:-|' >> release.txt
+        echo "$(egrep "config.buildinfo|openwrt.*.manifest|openwrt.*.ubi|openwrt.*.bin" ${{ env.FIRMWARE }}/sha256sums | awk -F" " '{print $2" "$1}'| sed -E "s/ |\*|$/\|/g")" >> release.txt
+        echo "status=success" >> $GITHUB_OUTPUT
+        # echo >> release.txt
+        # echo "> config.buildinfo" >> release.txt
+        # echo "> $(ls -1 ${{ env.FIRMWARE }}/*.manifest | rev | cut -d"/" -f1 | rev)" >> release.txt
+        # echo "> $(ls -1 ${{ env.FIRMWARE }}/*.ubi | rev | cut -d"/" -f1 | rev)" >> release.txt
+        # echo "> $(ls -1 ${{ env.FIRMWARE }}/*.bin | rev | cut -d"/" -f1 | rev)" >> release.txt
+        # echo >> release.txt
+        # echo "### Release Sha256sums:" >> release.txt
+        # echo >> release.txt
+        # echo "$(egrep "config.buildinfo|openwrt.*.manifest|openwrt.*.ubi|openwrt.*.bin" ${{ env.FIRMWARE }}/sha256sums | sed "s/^/\> /g")" >> release.txt
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Upload firmware to release
+      uses: softprops/action-gh-release@master
+      if: steps.tag.outputs.status == 'success' && !cancelled()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        name: ${{ steps.tag.outputs.release_name }}
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        prerelease: true
+        body_path: release.txt
+        files: |
+         ${{ env.FIRMWARE }}/*.ubi
+         ${{ env.FIRMWARE }}/*.bin
+         ${{ env.FIRMWARE }}/config.buildinfo
+         ${{ env.FIRMWARE }}/*.manifest
+
+    - name: Delete releases and workflows runs
+      uses: ophub/delete-releases-workflows@main
+      with:
+        delete_releases: true
+        prerelease_option: true
+        releases_keep_latest: 3
+        delete_workflows: true
+        workflows_keep_day: 3
+        gh_token: ${{ secrets.GITHUB_TOKEN }}
