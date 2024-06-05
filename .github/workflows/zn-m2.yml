@@ -243,7 +243,7 @@ jobs:
       with:
         delete_releases: true
         prerelease_option: true
-        releases_keep_latest: 3
+        releases_keep_latest: 6
         delete_workflows: true
         workflows_keep_day: 3
         gh_token: ${{ secrets.GITHUB_TOKEN }}
