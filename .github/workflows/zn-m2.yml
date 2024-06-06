@@ -108,6 +108,8 @@ jobs:
       run: |
         df -hT $GITHUB_WORKSPACE
         git clone $REPO_URL -b $REPO_BRANCH openwrt
+        mkdir -p target/linux/generic/hack-4.4
+        cp $GITHUB_WORKSPACE/patches/b87b4734c6e56fa45ec612350e2aa480ed2d8dd6.patch target/linux/generic/hack-4.4/953-add-shortcut-forwarding-engine-driver.patch
 
     - name: Load custom feeds
       run: |
