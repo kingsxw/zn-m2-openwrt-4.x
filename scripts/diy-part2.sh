@@ -18,3 +18,7 @@ sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/M
 
 # Modify hostname
 sed -i 's/OpenWrt/ZN-M2/g' package/base-files/files/bin/config_generate
+
+# coremark
+chmod +x ./coremark
+source ./coremark
