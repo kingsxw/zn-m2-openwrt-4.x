@@ -19,6 +19,10 @@ rm -rf feeds/luci/applications/luci-app-argon-config feeds/smpackage/luci-app-ar
 git clone https://github.com/jerrykuku/luci-app-argon-config.git -b 18.06 feeds/luci/applications/luci-app-argon-config
 git clone https://github.com/jerrykuku/luci-app-argon-config.git -b 18.06 feeds/smpackage/luci-app-argon-config
 
+# miniupnpd
+rm -rf feeds/smpackage/miniupnpd-iptables
+cp -rf feeds/packages/net/miniupnpd feeds/smpackage/miniupnpd-iptables
+
 # 替换golang版本为1.22
 rm -rf feeds/packages/lang/golang
 git clone https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
