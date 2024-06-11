@@ -14,8 +14,10 @@
 # 替换argon主题
 rm -rf feeds/luci/themes/luci-theme-argon* feeds/smpackage/luci-theme-argon*
 git clone https://github.com/jerrykuku/luci-theme-argon.git -b 18.06 feeds/luci/themes/luci-theme-argon
+git clone https://github.com/jerrykuku/luci-theme-argon.git -b 18.06 feeds/smpackage/luci-theme-argon
 rm -rf feeds/luci/applications/luci-app-argon-config feeds/smpackage/luci-app-argon-config
 git clone https://github.com/jerrykuku/luci-app-argon-config.git -b 18.06 feeds/luci/applications/luci-app-argon-config
+git clone https://github.com/jerrykuku/luci-app-argon-config.git -b 18.06 feeds/smpackage/luci-app-argon-config
 
 # 替换golang版本为1.22
 rm -rf feeds/packages/lang/golang
